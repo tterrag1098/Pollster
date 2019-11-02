@@ -1,0 +1,57 @@
+buildscript {
+    repositories {
+        maven {
+            name 'Shadow'
+            url 'http://dl.bintray.com/content/johnrengelman/gradle-plugins'
+        }
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git:0.8.0'
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+archivesBaseName = "Pollster"
+group = 'com.tterrag.chatmux.pollster'
+description = "ChatMux plugin for polling"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+import org.ajoberstar.grgit.Grgit
+def repo = Grgit.open(project.file('.'))
+
+if (System.getenv('BUILD_NUMBER') != null) {
+    version += ".${System.getenv('BUILD_NUMBER')}"
+} else {
+    version += ".${repo.log().find().abbreviatedId}"
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenCentral()
+	jcenter() 
+	maven {
+		url  "https://jitpack.io"
+	}
+	maven {
+		url "https://oss.sonatype.org/content/repositories/snapshots/"
+	}
+}
+
+dependencies {
+    implementation 'com.tterrag.chatmux:ChatMux-api:0.0.1.23'
+    
+    compileOnly 'org.projectlombok:lombok:1.18.8'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    
+    annotationProcessor 'org.pf4j:pf4j:2.6.0'
+}
