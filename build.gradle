@@ -14,6 +14,7 @@ buildscript {
 
 apply plugin: 'maven'
 apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
@@ -40,7 +41,7 @@ repositories {
     mavenCentral()
 	jcenter() 
 	maven {
-		url  "https://jitpack.io"
+		url  "https://maven2.tterrag.com/"
 	}
 	maven {
 		url "https://oss.sonatype.org/content/repositories/snapshots/"
@@ -48,10 +49,15 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.tterrag.chatmux:ChatMux-api:0.0.1.23'
+    implementation 'com.tterrag.chatmux:ChatMux-api:0.0.1.26'
+    implementation 'com.tterrag.chatmux:ChatMux-utils:0.0.1.26'
+    implementation 'io.projectreactor.netty:reactor-netty:0.8.8.RELEASE'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
     
     compileOnly 'org.projectlombok:lombok:1.18.8'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     
+    annotationProcessor 'org.projectlombok:lombok:1.18.8'
     annotationProcessor 'org.pf4j:pf4j:2.6.0'
 }
