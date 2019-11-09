@@ -1,7 +1,6 @@
 package com.tterrag.chatmux.pollster;
 
 import java.util.Locale;
-import java.util.Objects;
 
 import org.pf4j.Extension;
 
@@ -22,9 +21,13 @@ public class PollsterCommandListener implements CommandListener {
             if (args.length > 0) {
                 switch (args[0].toLowerCase(Locale.ROOT)) {
                     case "current": 
-                        return Pollster.API.get("/poll/current", Poll.class)
-                                .flatMap(poll -> ctx.reply(Objects.toString(poll)));
+                        return Pollster.API.getResponse("/poll/current", Poll.class)
+                                .flatMap(resp -> resp.getData()
+                                        .map(poll -> ctx.reply(poll.formatMessage()))
+                                        .orElse(ctx.reply(resp.getMessage())));
                 }
+            } else {
+                return ctx.reply("Available commands: current");
             }
         }
         return Mono.empty();

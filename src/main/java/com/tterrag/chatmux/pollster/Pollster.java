@@ -12,7 +12,6 @@ import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
 import com.tterrag.chatmux.pollster.objects.Vote;
 import com.tterrag.chatmux.pollster.objects.VoteList;
-import com.tterrag.chatmux.util.http.RequestHelper;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -22,7 +21,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class Pollster implements WiretapPlugin {
     
-    public static final RequestHelper API = new PollsterRequestHelper();
+    public static final PollsterRequestHelper API = new PollsterRequestHelper();
     
     private static final Set<ChatMessage<?>> MESSAGE_CACHE = Collections.newSetFromMap(new WeakHashMap<>());
     
