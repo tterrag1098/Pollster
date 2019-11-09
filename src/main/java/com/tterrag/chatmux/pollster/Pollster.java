@@ -6,8 +6,6 @@ import java.util.WeakHashMap;
 
 import org.pf4j.Extension;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
@@ -24,7 +22,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class Pollster implements WiretapPlugin {
     
-    public static final RequestHelper API = new PollsterRequestHelper(new ObjectMapper());
+    public static final RequestHelper API = new PollsterRequestHelper();
     
     private static final Set<ChatMessage<?>> MESSAGE_CACHE = Collections.newSetFromMap(new WeakHashMap<>());
     
@@ -34,7 +32,7 @@ public class Pollster implements WiretapPlugin {
             System.out.println(msg + " (" + msg.getClass().getSimpleName() + " @ " + System.identityHashCode(msg) + ")");
             if (msg.getContent().startsWith("!vote")) {
                 String vote = msg.getContent().replace("!vote", "").trim();
-                return API.post("/poll/vote", new VoteList(new Vote(msg.getUser(), vote)), JsonNode.class)
+                return API.post("/poll/vote", new VoteList(new Vote(msg.getUser(), vote)), boolean[].class)
                         .doOnNext(content -> log.info("Response: {}", content))
                         .then();
             }

@@ -12,11 +12,13 @@ buildscript {
     }
 }
 
-apply plugin: 'maven'
-apply plugin: 'java'
-apply plugin: 'java-library'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'com.github.johnrengelman.shadow' version '4.0.1'
+}
 
 archivesBaseName = "Pollster"
 group = 'com.tterrag.chatmux.pollster'
@@ -33,26 +35,35 @@ if (System.getenv('BUILD_NUMBER') != null) {
     version += ".${repo.log().find().abbreviatedId}"
 }
 
-tasks.withType(JavaCompile) {
+compileJava {
+    options.compilerArgs << '-parameters'
     options.encoding = 'UTF-8'
+}
+
+shadowJar.dependencies {
+    include dependency('com.fasterxml.jackson.module:jackson-module-parameter-names')
+    include dependency('com.fasterxml.jackson.datatype:jackson-datatype-jsr310')
 }
 
 repositories {
     mavenCentral()
-	jcenter() 
-	maven {
-		url  "https://maven2.tterrag.com/"
-	}
-	maven {
-		url "https://oss.sonatype.org/content/repositories/snapshots/"
-	}
+    jcenter() 
+    maven {
+        url  "https://maven2.tterrag.com/"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
-    implementation 'com.tterrag.chatmux:ChatMux-api:0.0.1.26'
-    implementation 'com.tterrag.chatmux:ChatMux-utils:0.0.1.26'
+    implementation 'com.tterrag.chatmux:ChatMux-api:0.0.1.28'
+    implementation 'com.tterrag.chatmux:ChatMux-utils:0.0.1.28'
     implementation 'io.projectreactor.netty:reactor-netty:0.8.8.RELEASE'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.8'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8'
     implementation 'ch.qos.logback:logback-classic:1.2.3'
     
     compileOnly 'org.projectlombok:lombok:1.18.8'
