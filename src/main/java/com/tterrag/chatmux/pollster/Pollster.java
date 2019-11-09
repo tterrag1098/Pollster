@@ -24,13 +24,13 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class Pollster implements WiretapPlugin {
     
-    private static final RequestHelper API = new PollsterRequestHelper(new ObjectMapper());
+    public static final RequestHelper API = new PollsterRequestHelper(new ObjectMapper());
     
     private static final Set<ChatMessage<?>> MESSAGE_CACHE = Collections.newSetFromMap(new WeakHashMap<>());
     
     @Override
     public <M extends ChatMessage<M>> Mono<Void> onMessage(M msg, ChatChannel<M> from, ChatChannel<?> to) {
-        if (!MESSAGE_CACHE.add(msg)) {
+        if (MESSAGE_CACHE.add(msg)) {
             System.out.println(msg + " (" + msg.getClass().getSimpleName() + " @ " + System.identityHashCode(msg) + ")");
             if (msg.getContent().startsWith("!vote")) {
                 String vote = msg.getContent().replace("!vote", "").trim();
