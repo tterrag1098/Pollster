@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.pollster;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -16,6 +17,7 @@ import com.tterrag.chatmux.pollster.objects.VoteList;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.UnicastProcessor;
 
 @Extension
 @Slf4j
@@ -25,15 +27,28 @@ public class Pollster implements WiretapPlugin {
     
     private static final Set<ChatMessage<?>> MESSAGE_CACHE = Collections.newSetFromMap(new WeakHashMap<>());
     
+    private final UnicastProcessor<Vote> voteBuffer = UnicastProcessor.create();
+    
+    public Pollster() {
+        voteBuffer.bufferTimeout(10, Duration.ofSeconds(30))
+            .doOnNext(votes -> log.info("Publishing {} votes: {}", votes.size(), votes))
+            .doOnTerminate(() -> log.error("Vote publisher terminated!"))
+            .flatMap(votes -> API.post("/poll/vote", new VoteList(votes), boolean[].class)
+                    .doOnError(t -> log.error("Error publishing votes:", t))
+                    .onErrorResume($ -> Mono.empty())
+                    .doOnNext(content -> log.info("Response: {}", content)))
+            .subscribe();
+    }
+    
     @Override
     public <M extends ChatMessage<M>> Mono<Void> onMessage(M msg, ChatChannel<M> from, ChatChannel<?> to) {
         if (MESSAGE_CACHE.add(msg)) {
             System.out.println(msg + " (" + msg.getClass().getSimpleName() + " @ " + System.identityHashCode(msg) + ")");
             if (msg.getContent().startsWith("!vote")) {
-                String vote = msg.getContent().replace("!vote", "").trim();
-                return API.post("/poll/vote", new VoteList(new Vote(msg.getUser(), vote)), boolean[].class)
-                        .doOnNext(content -> log.info("Response: {}", content))
-                        .then();
+                String option = msg.getContent().replace("!vote", "").trim();
+                Vote vote = new Vote(msg.getUser(), option);
+                log.info("Buffering vote: {}", vote);
+                voteBuffer.onNext(vote);
             }
         }
         return Mono.empty();
