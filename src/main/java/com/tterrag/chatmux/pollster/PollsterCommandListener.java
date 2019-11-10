@@ -33,4 +33,8 @@ public class PollsterCommandListener implements CommandListener {
         return Mono.empty();
     }
 
+    @Override
+    public Mono<Boolean> canHandle(String command, String args) {
+        return Mono.fromSupplier(() -> command.equals("!pollster"));
+    }
 }
