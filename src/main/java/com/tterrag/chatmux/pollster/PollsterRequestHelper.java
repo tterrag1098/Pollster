@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.tterrag.chatmux.pollster.objects.Poll;
 import com.tterrag.chatmux.util.http.RequestHelper;
 import com.tterrag.chatmux.util.reactor.Monos;
 
@@ -45,5 +46,13 @@ public class PollsterRequestHelper extends RequestHelper {
     
     public <T> Mono<Response<T>> getResponse(String endpoint, Class<? extends T> type) {
         return this.get(endpoint, TypeFactory.defaultInstance().constructParametricType(Response.class, type));
+    }
+    
+    public Mono<Poll> getCurrentPoll() {
+        return get("/poll/current", Poll.class);
+    }
+    
+    public Mono<Response<Poll>> getCurrentPollResponse() {
+        return getResponse("/poll/current", Poll.class);
     }
 }

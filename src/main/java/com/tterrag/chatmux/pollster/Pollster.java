@@ -5,12 +5,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import org.pf4j.Extension;
-
-import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
-import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
 import com.tterrag.chatmux.pollster.objects.Vote;
 import com.tterrag.chatmux.pollster.objects.VoteList;
 
@@ -19,9 +15,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.UnicastProcessor;
 
-@Extension
 @Slf4j
-public class Pollster implements WiretapPlugin {
+public class Pollster {
     
     public static final PollsterRequestHelper API = new PollsterRequestHelper();
     
@@ -29,31 +24,34 @@ public class Pollster implements WiretapPlugin {
     
     private final UnicastProcessor<Vote> voteBuffer = UnicastProcessor.create();
     
+    private final Flux<boolean[]> results;
+    
     public Pollster() {
-        voteBuffer.bufferTimeout(10, Duration.ofSeconds(30))
+        results = voteBuffer.bufferTimeout(10, Duration.ofSeconds(30))
             .doOnNext(votes -> log.info("Publishing {} votes: {}", votes.size(), votes))
             .doOnTerminate(() -> log.error("Vote publisher terminated!"))
             .flatMap(votes -> API.post("/poll/vote", new VoteList(votes), boolean[].class)
                     .doOnError(t -> log.error("Error publishing votes:", t))
                     .onErrorResume($ -> Mono.empty())
                     .doOnNext(content -> log.info("Response: {}", content)))
-            .subscribe();
+            .share();
+        
+        results.subscribe();
     }
     
-    @Override
-    public <M extends ChatMessage<M>> Mono<Void> onMessage(M msg, ChatChannel<M> from, ChatChannel<?> to) {
+    public Mono<Void> onMessage(ChatMessage<?> msg) {
         if (MESSAGE_CACHE.add(msg)) {
-            System.out.println(msg + " (" + msg.getClass().getSimpleName() + " @ " + System.identityHashCode(msg) + ")");
             if (msg.getContent().startsWith("!vote")) {
-                String option = msg.getContent().replace("!vote", "").trim();
-                Vote vote = new Vote(msg.getUser(), option);
-                log.info("Buffering vote: {}", vote);
-                voteBuffer.onNext(vote);
+                return Mono.just(msg.getContent().replace("!vote", "").trim())
+                        .map(option -> new Vote(msg.getUser(), option))
+                        .doOnNext(vote -> log.info("Buffering vote: {}", vote))
+                        .doOnNext(vote -> voteBuffer.onNext(vote))
+                        .then();
             }
         }
         return Mono.empty();
     }
-        
+
     private static class Message implements ChatMessage<Message> {
 
         @Override
@@ -103,23 +101,8 @@ public class Pollster implements WiretapPlugin {
     }
     
     public static void main(String[] args) {
-        new Pollster().onMessage(new Message(), new ChatChannel<Message>() {
-
-            @Override
-            public String getName() {
-                return "discord";
-            }
-
-            @Override
-            public ChatService<Message> getService() {
-                return null;
-            }
-
-            @Override
-            public Flux<Message> connect() {
-                throw new UnsupportedOperationException();
-            }
-            
-        }, null).block();
+        Pollster pollster = new Pollster();
+        pollster.onMessage(new Message()).block();
+        pollster.results.doOnNext(res -> log.info("Vote results: {}", res)).blockFirst();
     }
 }
