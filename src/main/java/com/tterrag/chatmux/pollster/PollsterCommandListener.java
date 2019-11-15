@@ -12,6 +12,7 @@ import org.pf4j.Extension;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.bridge.Connectable;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandListener;
@@ -25,15 +26,23 @@ public class PollsterCommandListener implements CommandListener {
     private final Pollster pollster = new Pollster();
     
     private final Set<String> connectedChannels = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private ChatService<?> service;
+    private Set<String> admins;
     
     @Override
     public Mono<?> onServiceAvailable(Connectable connectable) {
         return readChannels(connectable);
     }
+    
+    @Override
+    public void setAdmins(ChatService<?> service, Set<String> admins) {
+        this.service = service;
+        this.admins = Collections.unmodifiableSet(admins);
+    }
 
     @Override
     public <M extends ChatMessage<M>> Mono<?> runCommand(String command, CommandContext<M> ctx) {
-        if (command.equals("!pollster")) {
+        if (ctx.getService() == this.service && this.admins.contains(ctx.getUserId()) && command.equals("!pollster")) {
             String[] args = ctx.getSplitArgs();
             if (args.length > 0) {
                 switch (args[0].toLowerCase(Locale.ROOT)) {
@@ -61,8 +70,8 @@ public class PollsterCommandListener implements CommandListener {
     }
 
     @Override
-    public Mono<Boolean> canHandle(String command, String args) {
-        return Mono.fromSupplier(() -> command.equals("!pollster"));
+    public Mono<Boolean> canHandle(ChatService<?> service, String command, String args) {
+        return Mono.fromSupplier(() -> service == this.service && command.equals("!pollster"));
     }
     
     private void saveChannels() {
