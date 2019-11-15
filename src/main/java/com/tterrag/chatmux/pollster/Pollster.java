@@ -49,7 +49,7 @@ public class Pollster {
         if (MESSAGE_CACHE.add(msg)) {
             if (msg.getContent().startsWith("!vote")) {
                 return Mono.just(msg.getContent().replace("!vote", "").trim())
-                        .map(option -> new Vote(msg.getUser(), option))
+                        .map(option -> new Vote(msg.getUserId(), option))
                         .doOnNext(vote -> log.info("Buffering vote: {}", vote))
                         .doOnNext(vote -> voteBuffer.onNext(vote))
                         .then();
@@ -97,6 +97,11 @@ public class Pollster {
         @Override
         public String getUser() {
             return "tterrag";
+        }
+        
+        @Override
+        public String getUserId() {
+            return "140245257416736769";
         }
 
         @Override
