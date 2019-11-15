@@ -38,10 +38,8 @@ public class PollsterCommandListener implements CommandListener {
             if (args.length > 0) {
                 switch (args[0].toLowerCase(Locale.ROOT)) {
                     case "current": 
-                        return Pollster.API.getCurrentPollResponse()
-                                .flatMap(resp -> resp.getData()
-                                        .map(poll -> ctx.reply(poll.formatMessage()))
-                                        .orElse(ctx.reply(resp.getMessage())))
+                        return pollster.getCurrentPoll()
+                                .flatMap(poll -> ctx.reply(poll.formatMessage()))
                                 .switchIfEmpty(ctx.reply("No poll active"));
                     case "listen":
                         Flux<? extends ChatMessage<?>> source;
@@ -83,6 +81,7 @@ public class PollsterCommandListener implements CommandListener {
                 return Flux.fromIterable(allLinks)
                         .doOnNext(connectedChannels::add)
                         .flatMap(connectable::connect)
+                        .flatMap(pollster::onMessage)
                         .then();
             }
             return Mono.empty();

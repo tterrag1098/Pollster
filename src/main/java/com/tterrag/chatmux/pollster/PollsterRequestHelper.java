@@ -1,12 +1,18 @@
 package com.tterrag.chatmux.pollster;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.tterrag.chatmux.pollster.objects.AcceptedVotes;
 import com.tterrag.chatmux.pollster.objects.Poll;
+import com.tterrag.chatmux.pollster.objects.Vote;
+import com.tterrag.chatmux.pollster.objects.VoteList;
 import com.tterrag.chatmux.util.http.RequestHelper;
 import com.tterrag.chatmux.util.reactor.Monos;
 
@@ -54,5 +60,13 @@ public class PollsterRequestHelper extends RequestHelper {
     
     public Mono<Response<Poll>> getCurrentPollResponse() {
         return getResponse("/poll/current", Poll.class);
+    }
+    
+    public Mono<AcceptedVotes> vote(int id, Vote... votes) {
+        return vote(id, Arrays.asList(votes));
+    }
+    
+    public Mono<AcceptedVotes> vote(int id, List<Vote> votes) {
+        return post("/poll/vote/" + id, new VoteList(votes), AcceptedVotes.class);
     }
 }
