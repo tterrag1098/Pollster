@@ -49,7 +49,7 @@ repositories {
     mavenCentral()
     jcenter() 
     maven {
-        url  "https://maven2.tterrag.com/"
+        url  "https://maven.tterrag.com/"
     }
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
