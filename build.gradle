@@ -42,6 +42,7 @@ compileJava {
 
 shadowJar.dependencies {
     include dependency('com.fasterxml.jackson.module:jackson-module-parameter-names')
+    include dependency('com.fasterxml.jackson.datatype:jackson-datatype-jdk8')
     include dependency('com.fasterxml.jackson.datatype:jackson-datatype-jsr310')
 }
 
