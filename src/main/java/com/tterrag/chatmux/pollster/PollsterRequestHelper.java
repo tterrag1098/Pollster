@@ -1,9 +1,11 @@
 package com.tterrag.chatmux.pollster;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -40,26 +42,13 @@ public class PollsterRequestHelper extends RequestHelper {
             .add("Authorization", "Bearer " + System.getProperty("pollster.authKey"));
     }
     
-    @Override
-    protected <T> Mono<T> handleResponse(HttpClientResponse resp, ByteBufMono body, JavaType type) {
-        if (type.getRawClass() == Response.class) {
-            return super.handleResponse(resp, body, type);
-        } else {
-            return super.<Response<T>>handleResponse(resp, body, TypeFactory.defaultInstance().constructParametricType(Response.class, type))
-                    .transform(Monos.mapOptional(Response::getData));
-        }
-    }
-    
-    public <T> Mono<Response<T>> getResponse(String endpoint, Class<? extends T> type) {
-        return this.get(endpoint, TypeFactory.defaultInstance().constructParametricType(Response.class, type));
+    protected <T> Mono<T> get(String endpoint, String key, Class<T> type) {
+        return get(endpoint, JsonNode.class).map(n -> n.get(key)).map(n -> mapper.convertValue(n, type));
     }
     
     public Mono<Poll> getCurrentPoll() {
-        return get("/poll/current", Poll.class);
-    }
-    
-    public Mono<Response<Poll>> getCurrentPollResponse() {
-        return getResponse("/poll/current", Poll.class);
+        return get("/polls/current", "poll", Poll.class)
+                .onErrorResume(IOException.class, $ -> Mono.empty());
     }
     
     public Mono<AcceptedVotes> vote(int id, Vote... votes) {
@@ -67,6 +56,6 @@ public class PollsterRequestHelper extends RequestHelper {
     }
     
     public Mono<AcceptedVotes> vote(int id, List<Vote> votes) {
-        return post("/poll/vote/" + id, new VoteList(votes), AcceptedVotes.class);
+        return post("/polls/vote/" + id, new VoteList(votes), AcceptedVotes.class);
     }
 }
