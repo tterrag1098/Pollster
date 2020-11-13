@@ -35,7 +35,7 @@ public class Pollster {
         results = voteBuffer.bufferTimeout(10, Duration.ofSeconds(30))
             .doOnNext(votes -> log.info("Publishing {} votes: {}", votes.size(), votes))
             .doOnTerminate(() -> log.error("Vote publisher terminated!"))
-            .flatMap(votes -> getCurrentPoll()
+            .flatMap(votes -> getCurrentPoll(true)
                     .flatMap(poll -> API.vote(poll.getId(), votes))
                     .doOnError(t -> log.error("Error publishing votes:", t))
                     .onErrorResume($ -> Mono.empty())
@@ -61,11 +61,11 @@ public class Pollster {
     private AtomicReference<Poll> currentPoll = new AtomicReference<>();
     private final Scheduler pollLookupThread = Schedulers.newSingle(r -> new Thread(r, "Current Poll Lookup"));
     
-    Mono<Poll> getCurrentPoll() {
+    Mono<Poll> getCurrentPoll(boolean update) {
         return Mono.fromSupplier(() -> {
             synchronized (currentPoll) {
                 Poll current = currentPoll.get();
-                if (current == null || current.getEndTime().isBefore(Instant.now())) {
+                if (update || current == null || current.getEndTime().isBefore(Instant.now())) {
                     return API.getCurrentPoll()
                             .doOnNext(currentPoll::set)
                             .switchIfEmpty(Mono.fromRunnable(() -> currentPoll.set(null)))

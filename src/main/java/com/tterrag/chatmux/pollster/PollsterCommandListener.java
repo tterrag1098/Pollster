@@ -47,7 +47,7 @@ public class PollsterCommandListener implements CommandListener {
             if (args.length > 0) {
                 switch (args[0].toLowerCase(Locale.ROOT)) {
                     case "current": 
-                        return pollster.getCurrentPoll()
+                        return pollster.getCurrentPoll(true)
                                 .flatMap(poll -> ctx.reply(poll.formatMessage()))
                                 .switchIfEmpty(ctx.reply("No poll active"));
                     case "listen":
