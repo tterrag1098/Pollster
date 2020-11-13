@@ -32,7 +32,7 @@ public class Pollster {
     private final Flux<AcceptedVotes> results;
     
     public Pollster() {
-        results = voteBuffer.bufferTimeout(10, Duration.ofSeconds(30))
+        results = voteBuffer.bufferTimeout(10, Duration.ofSeconds(5))
             .doOnNext(votes -> log.info("Publishing {} votes: {}", votes.size(), votes))
             .doOnTerminate(() -> log.error("Vote publisher terminated!"))
             .flatMap(votes -> getCurrentPoll(true)
@@ -57,7 +57,7 @@ public class Pollster {
         }
         return Mono.empty();
     }
-    
+
     private AtomicReference<Poll> currentPoll = new AtomicReference<>();
     private final Scheduler pollLookupThread = Schedulers.newSingle(r -> new Thread(r, "Current Poll Lookup"));
     
